@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+commit_msg_file="$1"
+first_line="$(head -n1 "$commit_msg_file" | tr -d '\r')"
+
+if [[ -z "$first_line" ]]; then
+  echo "✖ Commit message cannot be empty." >&2
+  exit 1
+fi
+
+pattern='^(feat|fix|chore|docs|style|refactor|test|build|ci|perf|revert)(\([a-z0-9-]+\))?(\!)?: .+'
+
+if [[ ! "$first_line" =~ $pattern ]]; then
+  cat >&2 <<'MSG'
+✖ Commit message must follow Conventional Commits,
+  e.g. `feat: add auth page` or `fix(api): handle timeout`.
+MSG
+  echo "  Got: $first_line" >&2
+  exit 1
+fi
+
+exit 0
