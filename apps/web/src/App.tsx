@@ -12,7 +12,6 @@ function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [sessionInitialized, setSessionInitialized] = useState(false)
   const [path, setPath] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : HOME_PATH))
-
   const navigate = useCallback((to: string, { replace = false }: { replace?: boolean } = {}) => {
     if (typeof window === 'undefined') return
 

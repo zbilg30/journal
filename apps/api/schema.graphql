@@ -1,0 +1,82 @@
+input AddSetupInput {
+  bias: String!
+  description: String!
+  lastExecuted: String
+  name: String!
+}
+
+input AddTradeInput {
+  closedBy: String!
+  date: String!
+  description: String
+  direction: String!
+  emotion: String
+  month: String
+  net: Float!
+  pair: String!
+  riskPercent: Float
+  rr: Float
+  session: String
+  setupId: ID
+  trades: Int!
+  withPlan: Boolean!
+}
+
+type MonthlyJournal {
+  days: [TradeDay!]
+  month: String
+  summary: MonthlySummary
+}
+
+type MonthlySummary {
+  activeDays: Int
+  grossLoss: Float
+  grossProfit: Float
+  month: String
+  net: Float
+  tradeCount: Int
+}
+
+type Mutation {
+  addSetup(input: AddSetupInput!): Setup
+  addTrade(input: AddTradeInput!): TradeDay
+}
+
+type Query {
+  monthlyJournal(month: String!): MonthlyJournal
+  setups: [Setup!]
+}
+
+type Setup {
+  bias: String
+  description: String
+  focusTag: String
+  id: ID
+  lastExecuted: String
+  name: String
+  stats: SetupStats
+}
+
+type SetupStats {
+  avgR: Float
+  sample: Int
+  winRate: Float
+}
+
+type TradeDay {
+  closedBy: String
+  date: String
+  description: String
+  direction: String
+  emotion: String
+  id: ID
+  month: String
+  net: Float
+  pair: String
+  riskPercent: Float
+  rr: Float
+  session: String
+  setupId: ID
+  trades: Int
+  withPlan: Boolean
+}
