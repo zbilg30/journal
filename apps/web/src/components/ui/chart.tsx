@@ -40,7 +40,7 @@ export function ChartContainer({ children, className, config }: ChartContainerPr
   return (
     <div
       className={cn(
-        'relative flex w-full min-w-0 flex-col gap-4 rounded-3xl border border-muted/40 bg-white/80 p-4 shadow-sm shadow-black/[0.02]',
+        'relative flex w-full min-w-0 flex-col gap-4 rounded-3xl border border-border/60 bg-card/70 p-4 shadow-sm shadow-black/30',
         className,
       )}
       data-recharts-config={JSON.stringify(config)}
@@ -70,4 +70,3 @@ export {
   XAxis,
   YAxis,
 }
-

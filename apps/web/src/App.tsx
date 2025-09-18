@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 
 import { AuthPage } from './components/AuthPage'
 import { MainPage } from './components/MainPage'
+import { setGraphqlAuthToken } from './lib/graphqlClient'
 import { supabase } from './lib/supabaseClient'
 
 const AUTH_PATH = '/auth'
@@ -40,6 +41,7 @@ function App() {
 
   useEffect(() => {
     if (!supabase) {
+      setGraphqlAuthToken(null)
       setSession(null)
       setSessionInitialized(true)
       return
@@ -52,6 +54,7 @@ function App() {
       .then(({ data }) => {
         if (!isMounted) return
 
+        setGraphqlAuthToken(data.session?.access_token ?? null)
         setSession(data.session)
         setSessionInitialized(true)
       })
@@ -59,6 +62,7 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setGraphqlAuthToken(nextSession?.access_token ?? null)
       setSession(nextSession)
       setSessionInitialized(true)
     })
@@ -85,6 +89,10 @@ function App() {
       navigate(AUTH_PATH, { replace: true })
     }
   }, [navigate, path, session, sessionInitialized])
+
+  useEffect(() => {
+    setGraphqlAuthToken(session?.access_token ?? null)
+  }, [session])
 
   if (!sessionInitialized) {
     return null

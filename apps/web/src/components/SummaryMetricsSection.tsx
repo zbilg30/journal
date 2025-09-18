@@ -41,13 +41,13 @@ type SummaryMetricCardProps = {
 function SummaryMetricCard({ label, value, helper, trendLabel, trendTone = 'neutral', children }: SummaryMetricCardProps) {
   const trendClasses =
     trendTone === 'positive'
-      ? 'text-emerald-600'
+      ? 'text-emerald-300'
       : trendTone === 'negative'
-        ? 'text-rose-500'
+        ? 'text-rose-300'
         : 'text-muted-foreground'
 
   return (
-    <article className="flex flex-col justify-between gap-3 rounded-3xl border border-muted/50 bg-white/90 p-5 shadow-sm shadow-black/[0.04]">
+    <article className="flex flex-col justify-between gap-3 rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm shadow-black/30">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
@@ -123,7 +123,7 @@ export function SummaryMetricsSection({ monthData, monthlySummary }: SummaryMetr
   }, [tradeStats])
 
   return (
-    <section className="rounded-[36px] border border-muted/40 bg-white/90 p-6 shadow-lg shadow-purple-400/20">
+    <section className="rounded-[36px] border border-border/60 bg-card/70 p-6 shadow-lg shadow-black/40">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last import</span>
@@ -169,7 +169,12 @@ export function SummaryMetricsSection({ monthData, monthlySummary }: SummaryMetr
                     startAngle={90}
                   >
                     <RechartsTooltip
-                      contentStyle={{ borderRadius: 12, borderColor: 'rgba(0,0,0,0.08)' }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        borderColor: 'rgba(148, 163, 184, 0.25)',
+                        backgroundColor: 'rgba(17, 21, 29, 0.95)',
+                        color: '#e5e7eb',
+                      }}
                       formatter={(value: number, name: string) => [preciseCurrencyFormatter.format(value), name]}
                     />
                     <RadialBar background dataKey="value" cornerRadius={16} />
@@ -179,13 +184,13 @@ export function SummaryMetricsSection({ monthData, monthlySummary }: SummaryMetr
               <div className="space-y-1 text-xs text-muted-foreground">
                 <p>
                   Gross profit{' '}
-                  <span className="font-semibold text-emerald-600">
+                  <span className="font-semibold text-emerald-300">
                     {preciseCurrencyFormatter.format(tradeStats.grossProfit)}
                   </span>
                 </p>
                 <p>
                   Gross loss{' '}
-                  <span className="font-semibold text-rose-500">
+                  <span className="font-semibold text-rose-300">
                     {tradeStats.grossLoss > 0 ? preciseCurrencyFormatter.format(-tradeStats.grossLoss) : '—'}
                   </span>
                 </p>
@@ -198,8 +203,8 @@ export function SummaryMetricsSection({ monthData, monthlySummary }: SummaryMetr
 
         <SummaryMetricCard helper="Average win vs. loss per trade" label="Avg win/loss trade" value={winLossRatio ?? '—'}>
           <div className="flex items-center justify-between text-xs font-semibold">
-            <span className="text-emerald-600">{averageWinLabel}</span>
-            <span className="text-rose-500">{averageLossLabel}</span>
+            <span className="text-emerald-300">{averageWinLabel}</span>
+            <span className="text-rose-300">{averageLossLabel}</span>
           </div>
         </SummaryMetricCard>
       </div>

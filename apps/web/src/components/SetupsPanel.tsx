@@ -14,19 +14,41 @@ export type TradingSetup = {
   focusTag?: string
 }
 
-export const defaultTradingSetups: TradingSetup[] = []
+const defaultTradingSetups: TradingSetup[] = []
 
 function SetupCard({ setup }: { setup: TradingSetup }) {
   const stats = setup.stats
+  const formattedLastExecuted = (() => {
+    if (!setup.lastExecuted) {
+      return '—'
+    }
+
+    let parsed = new Date(setup.lastExecuted)
+
+    if (Number.isNaN(parsed.getTime())) {
+      parsed = new Date(`${setup.lastExecuted}T00:00:00`)
+    }
+
+    if (Number.isNaN(parsed.getTime())) {
+      return setup.lastExecuted
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(parsed)
+  })()
+
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-muted/40 bg-white/80 p-4 text-sm shadow-sm shadow-black/[0.03]">
+    <article className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/75 p-4 text-sm shadow-sm shadow-black/30">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold tracking-tight text-foreground">{setup.name}</h3>
           <p className="text-xs font-medium text-muted-foreground/70">{setup.bias}</p>
         </div>
         {setup.focusTag ? (
-          <span className="whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+          <span className="whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
             {setup.focusTag}
           </span>
         ) : null}
@@ -42,7 +64,7 @@ function SetupCard({ setup }: { setup: TradingSetup }) {
         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/60">Stats coming soon</p>
       )}
       <span className="text-[11px] font-medium text-muted-foreground/60">
-        Last executed {setup.lastExecuted ?? '—'}
+        Last executed {formattedLastExecuted}
       </span>
     </article>
   )
@@ -55,7 +77,7 @@ type SetupsPanelProps = {
 
 export function SetupsPanel({ setups = defaultTradingSetups, onAddSetup }: SetupsPanelProps) {
   return (
-    <section className="rounded-[32px] border border-muted/40 bg-gradient-to-br from-white/80 via-white to-primary/10 p-6 shadow-inner shadow-purple-200/30">
+    <section className="rounded-[32px] border border-border/60 bg-gradient-to-br from-[#1b2230]/80 via-[#141b27]/90 to-[#111822]/90 p-6 shadow-inner shadow-black/40">
       <div className="flex flex-col gap-5">
         <div className="space-y-2">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground/70">
@@ -71,7 +93,7 @@ export function SetupsPanel({ setups = defaultTradingSetups, onAddSetup }: Setup
           {setups.length ? (
             setups.map((setup) => <SetupCard key={setup.id} setup={setup} />)
           ) : (
-            <p className="rounded-2xl border border-dashed border-muted/50 bg-white/60 px-4 py-6 text-center text-sm text-muted-foreground">
+            <p className="rounded-2xl border border-dashed border-border/50 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
               You haven&apos;t created any setups yet. Add one to document the rules you execute against.
             </p>
           )}

@@ -198,12 +198,12 @@ export function AddTradeDialog({
   return (
     <div
       aria-modal
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-10 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-10 backdrop-blur-sm"
       onClick={handleOverlayClick}
       role="dialog"
     >
       <div
-        className="relative w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl shadow-black/20"
+        className="relative w-full max-w-2xl rounded-3xl border border-border/60 bg-card/95 p-6 shadow-2xl shadow-black/40"
         role="document"
       >
         <div className="flex items-start justify-between gap-4">
@@ -215,7 +215,7 @@ export function AddTradeDialog({
           </div>
           <button
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-muted bg-white text-muted-foreground transition hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-muted/40 text-muted-foreground transition hover:bg-muted/60"
             onClick={handleClose}
             type="button"
           >
@@ -420,7 +420,9 @@ export function AddTradeDialog({
           </div>
 
           {error ? (
-            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">{error}</p>
+            <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200">
+              {error}
+            </p>
           ) : null}
 
           <div className="flex items-center justify-end gap-2">

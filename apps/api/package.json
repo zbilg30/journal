@@ -10,7 +10,13 @@
   },
   "dependencies": {
     "@pothos/core": "^4.1.0",
-    "graphql": "^16.9.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "@ai-sdk/deepseek": "^1.0.15",
+    "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/openai": "^2.0.27",
+    "@ai-sdk/react": "^2.0.38",
+    "ai": "^5.0.38",
+     "graphql": "^16.9.0",
     "graphql-yoga": "^5.10.4",
     "nanoid": "^5.0.7"
   },
