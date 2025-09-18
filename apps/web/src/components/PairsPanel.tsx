@@ -47,7 +47,7 @@ export function PairsPanel({ title = "Pairs In Play", pairs, onAddPair, onRemove
   const hasPairs = pairs.length > 0
 
   return (
-    <section className="rounded-[32px] bg-white/80 p-6 shadow-xl shadow-blue-400/20 ring-1 ring-black/5 backdrop-blur">
+    <section className="rounded-[32px] border border-border/50 bg-card/70 p-6 shadow-xl shadow-black/40 backdrop-blur">
       <div className="flex flex-col gap-6">
         <header className="space-y-1">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground/70">Watchlist</span>
@@ -57,14 +57,18 @@ export function PairsPanel({ title = "Pairs In Play", pairs, onAddPair, onRemove
           </p>
         </header>
 
-        <div className={cn('grid gap-3', !hasPairs && 'border border-dashed border-muted/70 p-6 text-center')}
+        <div
+          className={cn(
+            'grid gap-3',
+            !hasPairs && 'border border-dashed border-border/50 bg-muted/20 p-6 text-center'
+          )}
           aria-live="polite"
         >
           {hasPairs ? (
             pairs.map((pair) => (
               <article
                 key={pair.id}
-                className="flex flex-col gap-2 rounded-2xl border border-muted/40 bg-white/90 p-4 text-sm shadow-sm shadow-black/[0.04]"
+                className="flex flex-col gap-2 rounded-2xl border border-border/40 bg-card/80 p-4 text-sm shadow-sm shadow-black/30"
               >
                 <div className="flex items-center justify-between gap-4">
                   <h3 className="text-sm font-semibold tracking-tight text-foreground">{pair.symbol}</h3>
@@ -85,7 +89,10 @@ export function PairsPanel({ title = "Pairs In Play", pairs, onAddPair, onRemove
           )}
         </div>
 
-        <form className="space-y-4 rounded-2xl border border-muted/40 bg-white/70 p-4 shadow-inner shadow-black/[0.05]" onSubmit={handleSubmit}>
+        <form
+          className="space-y-4 rounded-2xl border border-border/50 bg-card/70 p-4 shadow-inner shadow-black/30"
+          onSubmit={handleSubmit}
+        >
           <div className="grid gap-2">
             <Label htmlFor="pair-symbol">Pair symbol</Label>
             <Input
@@ -101,7 +108,9 @@ export function PairsPanel({ title = "Pairs In Play", pairs, onAddPair, onRemove
           </div>
 
           {error ? (
-            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">{error}</p>
+            <p className="rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs font-medium text-amber-200">
+              {error}
+            </p>
           ) : null}
 
           <div className="flex justify-end">

@@ -81,25 +81,25 @@ function DayCell({ day }: { day: CalendarDay }) {
   const isHighlighted = Boolean(day.highlight)
   const dayNumberClasses = cn(
     'text-xs font-semibold sm:text-sm',
-    day.isCurrentMonth ? 'text-foreground/70' : 'text-muted-foreground/50',
+    day.isCurrentMonth ? 'text-foreground/80' : 'text-muted-foreground/50',
   )
   const tradesLabelClasses = cn(
     'block text-[10px] font-medium sm:text-[11px]',
     day.highlight === 'positive'
-      ? 'text-emerald-600/80'
+      ? 'text-emerald-300'
       : day.highlight === 'negative'
-        ? 'text-rose-500/80'
-        : 'text-muted-foreground/60',
+        ? 'text-rose-300'
+        : 'text-muted-foreground/65',
   )
 
   return (
     <div
       className={cn(
-        'flex aspect-square flex-col justify-between rounded-xl border border-transparent bg-white/60 p-2 text-[11px] font-medium text-muted-foreground shadow-sm shadow-black/[0.02] sm:rounded-2xl sm:p-3 sm:text-xs',
-        !day.isCurrentMonth && 'bg-muted/30 text-muted-foreground/60 shadow-none',
-        !isHighlighted && day.isCurrentMonth && 'bg-muted/20',
-        day.highlight === 'positive' && 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none',
-        day.highlight === 'negative' && 'border-rose-200 bg-rose-50 text-rose-600 shadow-none',
+        'flex aspect-square flex-col justify-between rounded-xl border border-border/40 bg-card/50 p-2 text-[11px] font-medium text-muted-foreground shadow-sm shadow-black/30 sm:rounded-2xl sm:p-3 sm:text-xs',
+        !day.isCurrentMonth && 'border-border/20 bg-background/20 text-muted-foreground/50 shadow-none',
+        !isHighlighted && day.isCurrentMonth && 'bg-card/40',
+        day.highlight === 'positive' && 'border-emerald-400/60 bg-emerald-400/10 text-emerald-100 shadow-none',
+        day.highlight === 'negative' && 'border-rose-500/60 bg-rose-500/10 text-rose-100 shadow-none',
       )}
     >
       <span className={dayNumberClasses}>{numberLabel}</span>
@@ -133,10 +133,10 @@ function WeekSummary({ week, className }: { week: CalendarWeek; className?: stri
   return (
     <div
       className={cn(
-        'flex flex-col justify-between gap-3 rounded-2xl border border-transparent bg-white/70 p-4 text-sm shadow-sm shadow-black/[0.02] sm:flex-row sm:items-center lg:h-full lg:flex-col',
-        week.tone === 'positive' && 'border-emerald-200 text-emerald-700',
-        week.tone === 'negative' && 'border-rose-200 text-rose-600',
-        week.tone === 'neutral' && 'border-muted text-foreground/70',
+        'flex flex-col justify-between gap-3 rounded-2xl border border-border/40 bg-card/60 p-4 text-sm shadow-sm shadow-black/30 sm:flex-row sm:items-center lg:h-full lg:flex-col',
+        week.tone === 'positive' && 'border-emerald-400/60 bg-emerald-400/10 text-emerald-200',
+        week.tone === 'negative' && 'border-rose-500/60 bg-rose-500/10 text-rose-200',
+        week.tone === 'neutral' && 'text-muted-foreground',
         className,
       )}
     >
@@ -166,11 +166,11 @@ export function CalendarSection({
   weeks,
 }: CalendarSectionProps) {
   return (
-    <section className="rounded-[32px] bg-white/80 p-6 shadow-xl shadow-purple-400/25 ring-1 ring-black/5 backdrop-blur">
+    <section className="rounded-[32px] border border-border/60 bg-card/70 p-6 shadow-xl shadow-black/40 backdrop-blur">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-muted bg-white text-muted-foreground shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground shadow-sm transition hover:bg-muted/50"
             type="button"
             aria-label={isMobileView ? 'Previous day' : 'Previous month'}
             onClick={onPrevious}
@@ -179,7 +179,7 @@ export function CalendarSection({
           </button>
           <span className="text-lg font-semibold tracking-tight text-foreground">{periodLabel}</span>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-muted bg-white text-muted-foreground shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground shadow-sm transition hover:bg-muted/50"
             type="button"
             aria-label={isMobileView ? 'Next day' : 'Next month'}
             onClick={onNext}
@@ -192,14 +192,14 @@ export function CalendarSection({
           Add trade
         </Button>
 
-        <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600">
+        <div className="flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
           <span>Monthly stats:</span>
           <span>{monthNetLabel}</span>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span className="rounded-full border border-muted/60 bg-muted/40 px-3 py-1">{monthlySummary.activeDays} days</span>
-          <span className="rounded-full border border-muted/60 bg-muted/40 px-3 py-1">{monthlySummary.tradeCount} trades</span>
+          <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1">{monthlySummary.activeDays} days</span>
+          <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1">{monthlySummary.tradeCount} trades</span>
         </div>
       </div>
 
@@ -213,7 +213,7 @@ export function CalendarSection({
               {activeWeek ? <WeekSummary className="w-full" week={activeWeek} /> : null}
             </div>
 
-            <div className="rounded-3xl border border-muted/40 bg-white/90 p-4 text-sm shadow-sm shadow-black/[0.02]">
+            <div className="rounded-3xl border border-border/60 bg-card/80 p-4 text-sm shadow-sm shadow-black/30">
               {activeTrade ? (
                 <div className="space-y-4">
                   <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
@@ -262,7 +262,7 @@ export function CalendarSection({
                   </dl>
 
                   {activeTrade.description ? (
-                    <div className="rounded-2xl border border-muted/50 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                    <div className="rounded-2xl border border-border/50 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
                       {activeTrade.description}
                     </div>
                   ) : null}

@@ -12,6 +12,14 @@ import {
 
 type SetupStats = NonNullable<Setup['stats']>
 
+function requireUserId(userId: string | null): string {
+  if (!userId) {
+    throw new Error('Not authenticated')
+  }
+
+  return userId
+}
+
 const SetupStatsRef = builder.objectRef<SetupStats>('SetupStats').implement({
   fields: (t) => ({
     winRate: t.exposeFloat('winRate'),
@@ -112,14 +120,14 @@ const AddTradeInput = builder.inputType('AddTradeInput', {
 builder.queryFields((t) => ({
   setups: t.field({
     type: [SetupRef],
-    resolve: () => getSetups(),
+    resolve: (_root, _args, { userId }) => getSetups(requireUserId(userId)),
   }),
   monthlyJournal: t.field({
     type: MonthlyJournalRef,
     args: {
       month: t.arg.string({ required: true }),
     },
-    resolve: (_parent, args) => getMonthlyJournal(args.month),
+    resolve: (_parent, args, { userId }) => getMonthlyJournal(requireUserId(userId), args.month),
   }),
 }))
 
@@ -129,8 +137,8 @@ builder.mutationFields((t) => ({
     args: {
       input: t.arg({ type: AddSetupInput, required: true }),
     },
-    resolve: (_parent, { input }) =>
-      addSetup({
+    resolve: (_parent, { input }, { userId }) =>
+      addSetup(requireUserId(userId), {
         ...input,
         lastExecuted: input.lastExecuted ?? undefined,
       }),
@@ -140,7 +148,7 @@ builder.mutationFields((t) => ({
     args: {
       input: t.arg({ type: AddTradeInput, required: true }),
     },
-    resolve: (_parent, { input }) => addTrade({
+    resolve: (_parent, { input }, { userId }) => addTrade(requireUserId(userId), {
       ...input,
       month: input.month ?? input.date.slice(0, 7),
       rr: input.rr ?? undefined,

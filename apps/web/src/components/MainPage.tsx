@@ -81,6 +81,7 @@ function normalizeTradeDay(step: TradeDayLike | null | undefined): TradeDayData 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
+import { Chatbot } from '@/components/Chatbot'
 
 type TradingJournalData = Record<string, Record<string, TradeDayData>>
 
@@ -238,13 +239,13 @@ type SummaryMetricCardProps = {
 function SummaryMetricCard({ label, value, helper, trendLabel, trendTone = 'neutral', children }: SummaryMetricCardProps) {
   const trendClasses =
     trendTone === 'positive'
-      ? 'text-emerald-600'
+      ? 'text-emerald-300'
       : trendTone === 'negative'
-        ? 'text-rose-500'
+        ? 'text-rose-300'
         : 'text-muted-foreground'
 
   return (
-    <article className="flex flex-col justify-between gap-3 rounded-3xl border border-muted/50 bg-white/90 p-5 shadow-sm shadow-black/[0.04]">
+    <article className="flex flex-col justify-between gap-3 rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm shadow-black/30">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
@@ -405,6 +406,49 @@ export function MainPage({ session }: MainPageProps) {
 
   const monthData = useMemo(() => journalData[monthKey] ?? {}, [journalData, monthKey])
 
+  const chatContextSummary = useMemo(() => {
+    const entries = Object.entries(monthData)
+    if (!entries.length) {
+      return `No trades have been logged for ${monthKey}.`
+    }
+
+    let winningDays = 0
+    let losingDays = 0
+    let flatDays = 0
+    let bestDay: { date: string; net: number } | null = null
+    let worstDay: { date: string; net: number } | null = null
+
+    entries.forEach(([date, trade]) => {
+      if (trade.net > 0) winningDays += 1
+      else if (trade.net < 0) losingDays += 1
+      else flatDays += 1
+
+      if (!bestDay || trade.net > bestDay.net) {
+        bestDay = { date, net: trade.net }
+      }
+      if (!worstDay || trade.net < worstDay.net) {
+        worstDay = { date, net: trade.net }
+      }
+    })
+
+    const formatDayLabel = (iso: string | undefined, value: number | undefined) => {
+      if (!iso || typeof value !== 'number') return 'N/A'
+      const displayDate = dayLabelFormatter.format(new Date(iso))
+      return `${displayDate} (${currencyFormatter.format(value)})`
+    }
+
+    const setupNames = setups.length ? setups.map((setup) => setup.name).join(', ') : 'None recorded'
+    const pairSymbols = tradingPairs.length ? tradingPairs.map((pair) => pair.symbol).join(', ') : 'None tracked'
+
+    return [
+      `Month ${monthKey}: net ${currencyFormatter.format(monthlySummary.net)}, trades ${monthlySummary.tradeCount}, active days ${monthlySummary.activeDays}.`,
+      `Winning days: ${winningDays}, losing days: ${losingDays}, flat days: ${flatDays}.`,
+      `Best day: ${formatDayLabel(bestDay?.date, bestDay?.net)}.`,
+      `Toughest day: ${formatDayLabel(worstDay?.date, worstDay?.net)}.`,
+      `Tracked setups: ${setupNames}. Active pairs: ${pairSymbols}.`,
+    ].join(' ')
+  }, [monthData, monthKey, monthlySummary, setups, tradingPairs])
+
   const tradeStats = useMemo(() => {
     let grossProfit = 0
     let grossLoss = 0
@@ -545,7 +589,6 @@ export function MainPage({ session }: MainPageProps) {
       bias: input.bias,
       description: input.description,
       focusTag: undefined,
-      lastExecuted: input.lastExecuted ?? undefined,
       stats: undefined,
     }
 
@@ -648,7 +691,7 @@ export function MainPage({ session }: MainPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#ede7ff] via-white to-[#ffd9f4] px-4 py-10">
+    <main className="min-h-screen bg-gradient-to-br from-[#11151d] via-[#0d1119] to-[#080b11] px-4 py-10 text-foreground">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -664,7 +707,7 @@ export function MainPage({ session }: MainPageProps) {
             Sign out
           </Button>
         </header>
-        <section className="rounded-[36px] border border-muted/40 bg-white/90 p-6 shadow-lg shadow-purple-400/20">
+        <section className="rounded-[36px] border border-border/60 bg-card/70 p-6 shadow-lg shadow-black/40">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last import</span>
@@ -714,7 +757,12 @@ export function MainPage({ session }: MainPageProps) {
                         startAngle={90}
                       >
                         <RechartsTooltip
-                          contentStyle={{ borderRadius: 12, borderColor: 'rgba(0,0,0,0.08)' }}
+                          contentStyle={{
+                            borderRadius: 12,
+                            borderColor: 'rgba(148, 163, 184, 0.25)',
+                            backgroundColor: 'rgba(17, 21, 29, 0.95)',
+                            color: '#e5e7eb',
+                          }}
                           formatter={(value: number, name: string) => [preciseCurrencyFormatter.format(value), name]}
                         />
                         <RadialBar background dataKey="value" cornerRadius={16} />
@@ -724,13 +772,13 @@ export function MainPage({ session }: MainPageProps) {
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <p>
                       Gross profit{' '}
-                      <span className="font-semibold text-emerald-600">
+                      <span className="font-semibold text-emerald-300">
                         {preciseCurrencyFormatter.format(tradeStats.grossProfit)}
                       </span>
                     </p>
                     <p>
                       Gross loss{' '}
-                      <span className="font-semibold text-rose-500">
+                      <span className="font-semibold text-rose-300">
                         {tradeStats.grossLoss > 0 ? preciseCurrencyFormatter.format(-tradeStats.grossLoss) : '—'}
                       </span>
                     </p>
@@ -743,8 +791,8 @@ export function MainPage({ session }: MainPageProps) {
 
             <SummaryMetricCard helper="Average win vs. loss per trade" label="Avg win/loss trade" value={winLossRatio ?? '—'}>
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-emerald-600">{averageWinLabel}</span>
-                <span className="text-rose-500">{averageLossLabel}</span>
+                <span className="text-emerald-300">{averageWinLabel}</span>
+                <span className="text-rose-300">{averageLossLabel}</span>
               </div>
             </SummaryMetricCard>
           </div>
@@ -779,6 +827,7 @@ export function MainPage({ session }: MainPageProps) {
         />
         <AddSetupDialog onOpenChange={setIsAddSetupOpen} onSubmit={handleCreateSetup} open={isAddSetupOpen} />
       </div>
+      <Chatbot contextSummary={chatContextSummary} />
     </main>
   )
 }

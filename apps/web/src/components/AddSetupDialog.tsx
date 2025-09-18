@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-  type MouseEvent,
-} from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,14 +9,12 @@ export type AddSetupInput = {
   name: string
   bias: string
   description: string
-  lastExecuted: string
 }
 
 type FormState = {
   name: string
   bias: string
   description: string
-  lastExecuted: string
 }
 
 type AddSetupDialogProps = {
@@ -36,29 +27,12 @@ const emptyForm: FormState = {
   name: '',
   bias: '',
   description: '',
-  lastExecuted: '',
 }
-
-const lastExecutedFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-})
 
 export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogProps) {
   const [formState, setFormState] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), [])
-
-  useEffect(() => {
-    if (!open) return
-    setFormState((prev) => ({
-      ...prev,
-      lastExecuted: prev.lastExecuted || todayIso,
-    }))
-    setError(null)
-  }, [open, todayIso])
 
   useEffect(() => {
     if (!open) {
@@ -98,15 +72,6 @@ export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogP
       return
     }
 
-    const lastExecutedIso = formState.lastExecuted || todayIso
-    const lastExecutedDate = new Date(lastExecutedIso)
-    if (Number.isNaN(lastExecutedDate.getTime())) {
-      setError('Provide a valid date for the last execution.')
-      return
-    }
-
-    const formattedLastExecuted = lastExecutedFormatter.format(lastExecutedDate)
-
     setError(null)
     setIsSubmitting(true)
 
@@ -115,7 +80,6 @@ export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogP
         name: formState.name.trim(),
         bias: formState.bias.trim(),
         description: formState.description.trim(),
-        lastExecuted: formattedLastExecuted,
       })
       onOpenChange(false)
     } catch (submitError) {
@@ -139,7 +103,10 @@ export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogP
       onClick={handleOverlayClick}
       role="dialog"
     >
-      <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl shadow-black/20" role="document">
+      <div
+        className="relative w-full max-w-lg rounded-3xl border border-border/60 bg-card/95 p-6 shadow-2xl shadow-black/40"
+        role="document"
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Add Setup</h2>
@@ -149,7 +116,7 @@ export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogP
           </div>
           <button
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-muted bg-white text-muted-foreground transition hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-muted/40 text-muted-foreground transition hover:bg-muted/60"
             onClick={handleClose}
             type="button"
           >
@@ -192,19 +159,10 @@ export function AddSetupDialog({ open, onOpenChange, onSubmit }: AddSetupDialogP
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="setup-last-executed">Last executed</Label>
-            <Input
-              id="setup-last-executed"
-              type="date"
-              max={todayIso}
-              value={formState.lastExecuted}
-              onChange={handleInputChange('lastExecuted')}
-            />
-          </div>
-
           {error ? (
-            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">{error}</p>
+            <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200">
+              {error}
+            </p>
           ) : null}
 
           <div className="flex items-center justify-end gap-2">
