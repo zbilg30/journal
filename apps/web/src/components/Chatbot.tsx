@@ -101,7 +101,7 @@ export function Chatbot() {
             onSubmit={async (event) => {
               event.preventDefault()
               if (!input.trim()) return
-              console.log(input)
+              setInput("")
               await sendMessage({ text: input });
             }}
             className="border-t border-border/60 bg-card/90 px-4 py-3"

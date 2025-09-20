@@ -16,6 +16,14 @@ export type Setup = {
   }
 }
 
+export type TradeAttachment = {
+  id?: string
+  bucket: string
+  path: string
+  contentType?: string
+  sortOrder?: number
+}
+
 export type TradeDay = {
   id: string
   date: string
@@ -32,6 +40,7 @@ export type TradeDay = {
   withPlan: boolean
   description?: string
   setupId?: string
+  attachments: TradeAttachment[]
 }
 
 export type MonthlyJournal = {
@@ -65,6 +74,14 @@ type SetupRow = {
   user_id: string | null
 }
 
+type TradeDayImageRow = {
+  id: string
+  bucket_id: string
+  storage_path: string
+  content_type: string | null
+  position: number | null
+}
+
 type TradeDayRow = {
   id: string
   trade_date: string
@@ -82,6 +99,7 @@ type TradeDayRow = {
   description: string | null
   setup_id: string | null
   user_id: string | null
+  trade_day_images?: TradeDayImageRow[] | null
 }
 
 type MonthlySummaryRow = {
@@ -157,9 +175,22 @@ function mapSetup(row: SetupRow): Setup {
   }
 }
 
+function mapTradeAttachment(row: TradeDayImageRow): TradeAttachment {
+  return {
+    id: row.id,
+    bucket: row.bucket_id,
+    path: row.storage_path,
+    contentType: row.content_type ?? undefined,
+    sortOrder: row.position ?? 0,
+  }
+}
+
 function mapTradeDay(row: TradeDayRow): TradeDay {
   const date = row.trade_date
   const month = date.slice(0, 7)
+  const attachments = (row.trade_day_images ?? [])
+    .map(mapTradeAttachment)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
 
   return {
     id: row.id,
@@ -177,6 +208,7 @@ function mapTradeDay(row: TradeDayRow): TradeDay {
     withPlan: row.with_plan,
     description: row.description ?? undefined,
     setupId: row.setup_id ?? undefined,
+    attachments,
   }
 }
 
@@ -255,6 +287,7 @@ export async function addSetup(userId: string, setup: Omit<Setup, 'id'>) {
 
 export async function addTrade(userId: string, trade: Omit<TradeDay, 'id'>) {
   const month = trade.month ?? trade.date.slice(0, 7)
+  const attachments = trade.attachments ?? []
   const payload = {
     trade_date: trade.date,
     month,
@@ -285,7 +318,32 @@ export async function addTrade(userId: string, trade: Omit<TradeDay, 'id'>) {
     throw new Error('Supabase did not return created trade row')
   }
 
-  return mapTradeDay(data)
+  const newTradeRow = data as TradeDayRow
+
+  if (attachments.length === 0) {
+    newTradeRow.trade_day_images = []
+    return mapTradeDay(newTradeRow)
+  }
+
+  const attachmentPayloads = attachments.map((attachment, index) => ({
+    trade_day_id: newTradeRow.id,
+    bucket_id: attachment.bucket,
+    storage_path: attachment.path,
+    content_type: attachment.contentType ?? null,
+    position: attachment.sortOrder ?? index,
+    user_id: userId,
+  }))
+
+  const { data: attachmentRows, error: attachmentError } = await supabase
+    .from('trade_day_images')
+    .insert(attachmentPayloads)
+    .select()
+
+  assertNoError(attachmentError, 'insert trade attachments')
+
+  newTradeRow.trade_day_images = (attachmentRows ?? []) as TradeDayImageRow[]
+
+  return mapTradeDay(newTradeRow)
 }
 
 export async function getSetups(userId: string) {
@@ -310,7 +368,7 @@ export async function getMonthlyJournal(
     await Promise.all([
       supabase
         .from('trade_days')
-        .select('*')
+        .select('*, trade_day_images(*)')
         .gte('trade_date', start)
         .lt('trade_date', end)
         .eq('user_id', userId)

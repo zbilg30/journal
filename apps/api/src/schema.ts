@@ -7,6 +7,7 @@ import {
   type MonthlyJournalResult,
   type MonthlySummary,
   type Setup,
+  type TradeAttachment,
   type TradeDay,
 } from './data'
 
@@ -44,6 +45,25 @@ const SetupRef = builder.objectRef<Setup>('Setup').implement({
   }),
 })
 
+const TradeAttachmentRef = builder.objectRef<TradeAttachment>('TradeAttachment').implement({
+  fields: (t) => ({
+    id: t.exposeID('id'),
+    bucket: t.exposeString('bucket'),
+    path: t.exposeString('path'),
+    contentType: t.exposeString('contentType', { nullable: true }),
+    sortOrder: t.exposeInt('sortOrder', { nullable: true }),
+  }),
+})
+
+const TradeAttachmentInput = builder.inputType('TradeAttachmentInput', {
+  fields: (t) => ({
+    bucket: t.string({ required: true }),
+    path: t.string({ required: true }),
+    contentType: t.string(),
+    sortOrder: t.int(),
+  }),
+})
+
 const TradeDayRef = builder.objectRef<TradeDay>('TradeDay').implement({
   fields: (t) => ({
     id: t.exposeID('id'),
@@ -61,6 +81,10 @@ const TradeDayRef = builder.objectRef<TradeDay>('TradeDay').implement({
     withPlan: t.exposeBoolean('withPlan'),
     description: t.exposeString('description', { nullable: true }),
     setupId: t.exposeID('setupId', { nullable: true }),
+    attachments: t.field({
+      type: [TradeAttachmentRef],
+      resolve: (trade) => trade.attachments ?? [],
+    }),
   }),
 })
 
@@ -114,6 +138,9 @@ const AddTradeInput = builder.inputType('AddTradeInput', {
     withPlan: t.boolean({ required: true }),
     description: t.string({ required: false }),
     setupId: t.id(),
+    attachments: t.field({
+      type: [TradeAttachmentInput],
+    }),
   }),
 })
 
@@ -164,6 +191,12 @@ builder.mutationFields((t) => ({
           : input.closedBy === 'manual'
             ? 'manual'
             : 'tp',
+      attachments: (input.attachments ?? []).map((attachment, index) => ({
+        bucket: attachment.bucket,
+        path: attachment.path,
+        contentType: attachment.contentType ?? undefined,
+        sortOrder: attachment.sortOrder ?? index,
+      })),
     }),
   }),
 }))
