@@ -1,4 +1,4 @@
-import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import type{ TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -23,6 +23,7 @@ export type AddSetupInput = {
 };
 
 export type AddTradeInput = {
+  attachments?: InputMaybe<Array<TradeAttachmentInput>>;
   closedBy: Scalars['String']['input'];
   date: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -101,8 +102,25 @@ export type SetupStats = {
   winRate?: Maybe<Scalars['Float']['output']>;
 };
 
+export type TradeAttachment = {
+  __typename?: 'TradeAttachment';
+  bucket?: Maybe<Scalars['String']['output']>;
+  contentType?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  path?: Maybe<Scalars['String']['output']>;
+  sortOrder?: Maybe<Scalars['Int']['output']>;
+};
+
+export type TradeAttachmentInput = {
+  bucket: Scalars['String']['input'];
+  contentType?: InputMaybe<Scalars['String']['input']>;
+  path: Scalars['String']['input'];
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type TradeDay = {
   __typename?: 'TradeDay';
+  attachments?: Maybe<Array<TradeAttachment>>;
   closedBy?: Maybe<Scalars['String']['output']>;
   date?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;

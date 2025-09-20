@@ -6,6 +6,7 @@ input AddSetupInput {
 }
 
 input AddTradeInput {
+  attachments: [TradeAttachmentInput!]
   closedBy: String!
   date: String!
   description: String
@@ -20,6 +21,13 @@ input AddTradeInput {
   setupId: ID
   trades: Int!
   withPlan: Boolean!
+}
+
+input TradeAttachmentInput {
+  bucket: String!
+  contentType: String
+  path: String!
+  sortOrder: Int
 }
 
 type MonthlyJournal {
@@ -64,6 +72,7 @@ type SetupStats {
 }
 
 type TradeDay {
+  attachments: [TradeAttachment!]
   closedBy: String
   date: String
   description: String
@@ -79,4 +88,12 @@ type TradeDay {
   setupId: ID
   trades: Int
   withPlan: Boolean
+}
+
+type TradeAttachment {
+  bucket: String
+  contentType: String
+  id: ID
+  path: String
+  sortOrder: Int
 }
