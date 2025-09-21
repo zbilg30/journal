@@ -203,7 +203,7 @@ export function AddTradeDialog({
       role="dialog"
     >
       <div
-        className="relative w-full max-w-2xl rounded-3xl border border-border/60 bg-card/95 p-6 shadow-2xl shadow-black/40"
+        className="relative w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-2xl"
         role="document"
       >
         <div className="flex items-start justify-between gap-4">
@@ -215,7 +215,7 @@ export function AddTradeDialog({
           </div>
           <button
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-muted/40 text-muted-foreground transition hover:bg-muted/60"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-muted/80"
             onClick={handleClose}
             type="button"
           >
@@ -403,7 +403,7 @@ export function AddTradeDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-3">
+          <div className="flex items-center justify-between rounded-2xl bg-muted px-4 py-3">
             <div>
               <span className="text-sm font-medium text-foreground">Followed plan?</span>
               <p className="text-xs text-muted-foreground">Mark this if the setup matched your playbook rules.</p>
@@ -420,7 +420,7 @@ export function AddTradeDialog({
           </div>
 
           {error ? (
-            <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200">
+            <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
               {error}
             </p>
           ) : null}

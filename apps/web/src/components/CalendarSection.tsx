@@ -81,24 +81,23 @@ function DayCell({ day }: { day: CalendarDay }) {
   const isHighlighted = Boolean(day.highlight)
   const dayNumberClasses = cn(
     'text-xs font-semibold sm:text-sm',
-    day.isCurrentMonth ? 'text-foreground/80' : 'text-muted-foreground/50',
   )
   const tradesLabelClasses = cn(
     'block text-[10px] font-medium sm:text-[11px]',
     day.highlight === 'positive'
-      ? 'text-emerald-300'
+      ? 'text-emerald-700 dark:text-emerald-300'
       : day.highlight === 'negative'
-        ? 'text-rose-300'
-        : 'text-muted-foreground/65',
+        ? 'text-red-700 dark:text-rose-300'
+        : 'text-muted-foreground',
   )
 
   return (
     <div
       className={cn(
-        'flex aspect-square flex-col justify-between rounded-xl border border-border/40 bg-card/50 p-2 text-[11px] font-medium text-muted-foreground shadow-sm shadow-black/30 sm:rounded-2xl sm:p-3 sm:text-xs',
+        'flex aspect-square flex-col justify-between rounded-xl border border-border bg-card p-2 text-[11px] font-medium text-muted-foreground shadow-sm sm:rounded-2xl sm:p-3 sm:text-xs',
         !day.isCurrentMonth && 'border-border/20 bg-background/20 text-muted-foreground/50 shadow-none',
         !isHighlighted && day.isCurrentMonth && 'bg-card/40',
-        day.highlight === 'positive' && 'border-emerald-400/60 bg-emerald-400/10 text-emerald-100 shadow-none',
+        day.highlight === 'positive' && 'border-emerald-400/60 bg-emerald-400/10  shadow-none',
         day.highlight === 'negative' && 'border-rose-500/60 bg-rose-500/10 text-rose-100 shadow-none',
       )}
     >
@@ -110,11 +109,11 @@ function DayCell({ day }: { day: CalendarDay }) {
               <CalendarGlyph
                 className={cn(
                   'h-3.5 w-3.5 sm:h-4 sm:w-4',
-                  day.highlight === 'positive' ? 'text-emerald-500' : 'text-rose-400',
+                  day.highlight === 'positive' ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-rose-400',
                 )}
               />
             )}
-            <span>{day.valueLabel}</span>
+            <span className='text-emerald-600 dark:text-emerald-500'>{day.valueLabel}</span>
           </span>
           <span className={tradesLabelClasses}>{day.tradesLabel}</span>
         </div>
@@ -133,9 +132,9 @@ function WeekSummary({ week, className }: { week: CalendarWeek; className?: stri
   return (
     <div
       className={cn(
-        'flex flex-col justify-between gap-3 rounded-2xl border border-border/40 bg-card/60 p-4 text-sm shadow-sm shadow-black/30 sm:flex-row sm:items-center lg:h-full lg:flex-col',
-        week.tone === 'positive' && 'border-emerald-400/60 bg-emerald-400/10 text-emerald-200',
-        week.tone === 'negative' && 'border-rose-500/60 bg-rose-500/10 text-rose-200',
+        'flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 text-sm shadow-sm sm:flex-row sm:items-center lg:h-full lg:flex-col',
+        week.tone === 'positive' && 'border-emerald-400/60 bg-emerald-400/10 text-emerald-800 dark:text-emerald-200',
+        week.tone === 'negative' && 'border-rose-500/60 bg-rose-500/10 text-red-800 dark:text-rose-200',
         week.tone === 'neutral' && 'text-muted-foreground',
         className,
       )}
@@ -166,11 +165,11 @@ export function CalendarSection({
   weeks,
 }: CalendarSectionProps) {
   return (
-    <section className="rounded-[32px] border border-border/60 bg-card/70 p-6 shadow-xl shadow-black/40 backdrop-blur">
+    <section className="rounded-[32px] border border-border bg-card p-6 shadow-xl backdrop-blur">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground shadow-sm transition hover:bg-muted/50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground shadow-sm transition hover:bg-muted/80"
             type="button"
             aria-label={isMobileView ? 'Previous day' : 'Previous month'}
             onClick={onPrevious}
@@ -179,7 +178,7 @@ export function CalendarSection({
           </button>
           <span className="text-lg font-semibold tracking-tight text-foreground">{periodLabel}</span>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground shadow-sm transition hover:bg-muted/50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground shadow-sm transition hover:bg-muted/80"
             type="button"
             aria-label={isMobileView ? 'Next day' : 'Next month'}
             onClick={onNext}
@@ -192,14 +191,14 @@ export function CalendarSection({
           Add trade
         </Button>
 
-        <div className="flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+        <div className="flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
           <span>Monthly stats:</span>
           <span>{monthNetLabel}</span>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1">{monthlySummary.activeDays} days</span>
-          <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1">{monthlySummary.tradeCount} trades</span>
+          <span className="rounded-full border border-border bg-muted px-3 py-1">{monthlySummary.activeDays} days</span>
+          <span className="rounded-full border border-border bg-muted px-3 py-1">{monthlySummary.tradeCount} trades</span>
         </div>
       </div>
 
