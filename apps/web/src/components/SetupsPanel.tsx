@@ -41,7 +41,7 @@ function SetupCard({ setup }: { setup: TradingSetup }) {
   })()
 
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/75 p-4 text-sm shadow-sm shadow-black/30">
+    <article className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 text-sm shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold tracking-tight text-foreground">{setup.name}</h3>
@@ -77,7 +77,7 @@ type SetupsPanelProps = {
 
 export function SetupsPanel({ setups = defaultTradingSetups, onAddSetup }: SetupsPanelProps) {
   return (
-    <section className="rounded-[32px] border border-border/60 bg-gradient-to-br from-[#1b2230]/80 via-[#141b27]/90 to-[#111822]/90 p-6 shadow-inner shadow-black/40">
+    <section className="rounded-[32px] border border-border bg-card p-6 shadow-lg">
       <div className="flex flex-col gap-5">
         <div className="space-y-2">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground/70">

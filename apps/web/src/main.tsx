@@ -4,11 +4,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { graphqlClient } from './lib/graphqlClient'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider value={graphqlClient}>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </Provider>
   </StrictMode>,
 )
