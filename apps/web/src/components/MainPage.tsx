@@ -88,9 +88,6 @@ import { Chatbot } from '@/components/Chatbot'
 type TradingJournalData = Record<string, Record<string, TradeDayData>>
 
 const defaultTradingPairs: TradingPair[] = [
-  { id: 'eurusd', symbol: 'EURUSD' },
-  { id: 'usdjpy', symbol: 'USDJPY' },
-  { id: 'gbpusd', symbol: 'GBPUSD' },
   {id: 'xauusd', symbol: 'XAUUSD' },
 ]
 
