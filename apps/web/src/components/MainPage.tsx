@@ -91,6 +91,7 @@ const defaultTradingPairs: TradingPair[] = [
   { id: 'eurusd', symbol: 'EURUSD' },
   { id: 'usdjpy', symbol: 'USDJPY' },
   { id: 'gbpusd', symbol: 'GBPUSD' },
+  {id: 'xauusd', symbol: 'XAUUSD' },
 ]
 
 const preciseCurrencyFormatter = new Intl.NumberFormat('en-US', {
