@@ -24,6 +24,13 @@ export type TradeAttachment = {
   sortOrder?: number
 }
 
+export type TradingPair = {
+  id: string
+  symbol: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type TradeDay = {
   id: string
   date: string
@@ -82,6 +89,14 @@ type TradeDayImageRow = {
   position: number | null
 }
 
+type TradingPairRow = {
+  id: string
+  user_id: string | null
+  symbol: string
+  inserted_at: string
+  updated_at: string
+}
+
 type TradeDayRow = {
   id: string
   trade_date: string
@@ -138,6 +153,10 @@ function normalizeIsoDate(value: string | undefined): string | null {
   return parsed.toISOString().slice(0, 10)
 }
 
+function normalizePairSymbol(value: string): string {
+  return value.trim().toUpperCase()
+}
+
 function assertNoError(error: PostgrestError | null, action: string): void {
   if (error) {
     throw new Error(`Supabase ${action} error: ${error.message}`)
@@ -182,6 +201,15 @@ function mapTradeAttachment(row: TradeDayImageRow): TradeAttachment {
     path: row.storage_path,
     contentType: row.content_type ?? undefined,
     sortOrder: row.position ?? 0,
+  }
+}
+
+function mapTradingPair(row: TradingPairRow): TradingPair {
+  return {
+    id: row.id,
+    symbol: row.symbol,
+    createdAt: row.inserted_at,
+    updatedAt: row.updated_at,
   }
 }
 
@@ -356,6 +384,69 @@ export async function getSetups(userId: string) {
   assertNoError(error, 'fetch setups')
 
   return (data ?? []).map(mapSetup)
+}
+
+export async function getTradingPairs(userId: string): Promise<TradingPair[]> {
+  const { data, error } = await supabase
+    .from('trading_pairs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('inserted_at', { ascending: true })
+
+  assertNoError(error, 'fetch trading pairs')
+
+  return (data ?? []).map((row) => mapTradingPair(row as TradingPairRow))
+}
+
+export async function addTradingPair(userId: string, symbol: string): Promise<TradingPair> {
+  const normalized = normalizePairSymbol(symbol)
+
+  const { data, error } = await supabase
+    .from('trading_pairs')
+    .insert({
+      user_id: userId,
+      symbol: normalized,
+    })
+    .select()
+    .single()
+
+  assertNoError(error, 'insert trading pair')
+
+  if (!data) {
+    throw new Error('Supabase did not return created trading pair row')
+  }
+
+  return mapTradingPair(data as TradingPairRow)
+}
+
+export async function updateTradingPair(userId: string, id: string, symbol: string): Promise<TradingPair> {
+  const normalized = normalizePairSymbol(symbol)
+
+  const { data, error } = await supabase
+    .from('trading_pairs')
+    .update({ symbol: normalized })
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  assertNoError(error, 'update trading pair')
+
+  if (!data) {
+    throw new Error('Trading pair not found')
+  }
+
+  return mapTradingPair(data as TradingPairRow)
+}
+
+export async function deleteTradingPair(userId: string, id: string): Promise<void> {
+  const { error } = await supabase
+    .from('trading_pairs')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  assertNoError(error, 'delete trading pair')
 }
 
 export async function getMonthlyJournal(

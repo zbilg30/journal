@@ -2,13 +2,18 @@ import { builder } from './builder'
 import {
   addSetup,
   addTrade,
+  addTradingPair,
+  deleteTradingPair,
   getMonthlyJournal,
   getSetups,
+  getTradingPairs,
   type MonthlyJournalResult,
   type MonthlySummary,
   type Setup,
   type TradeAttachment,
   type TradeDay,
+  type TradingPair,
+  updateTradingPair,
 } from './data'
 
 type SetupStats = NonNullable<Setup['stats']>
@@ -52,6 +57,15 @@ const TradeAttachmentRef = builder.objectRef<TradeAttachment>('TradeAttachment')
     path: t.exposeString('path'),
     contentType: t.exposeString('contentType', { nullable: true }),
     sortOrder: t.exposeInt('sortOrder', { nullable: true }),
+  }),
+})
+
+const TradingPairRef = builder.objectRef<TradingPair>('TradingPair').implement({
+  fields: (t) => ({
+    id: t.exposeID('id'),
+    symbol: t.exposeString('symbol'),
+    createdAt: t.exposeString('createdAt'),
+    updatedAt: t.exposeString('updatedAt'),
   }),
 })
 
@@ -149,6 +163,10 @@ builder.queryFields((t) => ({
     type: [SetupRef],
     resolve: (_root, _args, { userId }) => getSetups(requireUserId(userId)),
   }),
+  tradingPairs: t.field({
+    type: [TradingPairRef],
+    resolve: (_root, _args, { userId }) => getTradingPairs(requireUserId(userId)),
+  }),
   monthlyJournal: t.field({
     type: MonthlyJournalRef,
     args: {
@@ -169,6 +187,31 @@ builder.mutationFields((t) => ({
         ...input,
         lastExecuted: input.lastExecuted ?? undefined,
       }),
+  }),
+  addTradingPair: t.field({
+    type: TradingPairRef,
+    args: {
+      symbol: t.arg.string({ required: true }),
+    },
+    resolve: (_parent, { symbol }, { userId }) => addTradingPair(requireUserId(userId), symbol),
+  }),
+  updateTradingPair: t.field({
+    type: TradingPairRef,
+    args: {
+      id: t.arg.id({ required: true }),
+      symbol: t.arg.string({ required: true }),
+    },
+    resolve: (_parent, { id, symbol }, { userId }) => updateTradingPair(requireUserId(userId), id, symbol),
+  }),
+  deleteTradingPair: t.field({
+    type: 'Boolean',
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: async (_parent, { id }, { userId }) => {
+      await deleteTradingPair(requireUserId(userId), id)
+      return true
+    },
   }),
   addTrade: t.field({
     type: TradeDayRef,

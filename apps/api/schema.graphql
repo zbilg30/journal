@@ -23,13 +23,6 @@ input AddTradeInput {
   withPlan: Boolean!
 }
 
-input TradeAttachmentInput {
-  bucket: String!
-  contentType: String
-  path: String!
-  sortOrder: Int
-}
-
 type MonthlyJournal {
   days: [TradeDay!]
   month: String
@@ -48,11 +41,15 @@ type MonthlySummary {
 type Mutation {
   addSetup(input: AddSetupInput!): Setup
   addTrade(input: AddTradeInput!): TradeDay
+  addTradingPair(symbol: String!): TradingPair
+  deleteTradingPair(id: ID!): Boolean
+  updateTradingPair(id: ID!, symbol: String!): TradingPair
 }
 
 type Query {
   monthlyJournal(month: String!): MonthlyJournal
   setups: [Setup!]
+  tradingPairs: [TradingPair!]
 }
 
 type Setup {
@@ -69,6 +66,21 @@ type SetupStats {
   avgR: Float
   sample: Int
   winRate: Float
+}
+
+type TradeAttachment {
+  bucket: String
+  contentType: String
+  id: ID
+  path: String
+  sortOrder: Int
+}
+
+input TradeAttachmentInput {
+  bucket: String!
+  contentType: String
+  path: String!
+  sortOrder: Int
 }
 
 type TradeDay {
@@ -90,10 +102,9 @@ type TradeDay {
   withPlan: Boolean
 }
 
-type TradeAttachment {
-  bucket: String
-  contentType: String
+type TradingPair {
+  createdAt: String
   id: ID
-  path: String
-  sortOrder: Int
+  symbol: String
+  updatedAt: String
 }

@@ -6,13 +6,15 @@ import { AddSetupDialog, type AddSetupInput } from '@/components/AddSetupDialog'
 import { AddTradeDialog, type AddTradeInput } from '@/components/AddTradeDialog'
 import {
   CalendarSection,
+  type AggregatedTradeDay,
   type CalendarDay,
   type CalendarMonthlySummary,
   type CalendarWeek,
-  type TradeDayData,
+  type TradeEntry,
 } from '@/components/CalendarSection'
 import { PairsPanel, type TradingPair } from '@/components/PairsPanel'
 import { SetupsPanel, type TradingSetup } from '@/components/SetupsPanel'
+import { TradeLogTable, type TradeLogEntry } from '@/components/TradeLogTable'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import {
   ChartContainer,
@@ -24,9 +26,14 @@ import {
 import {
   AddSetupDocument,
   AddTradeDocument,
+  AddTradingPairDocument,
   GetSetupsDocument,
+  GetTradingPairsDocument,
   MonthlyJournalDocument,
+  UpdateTradingPairDocument,
+  DeleteTradingPairDocument,
   type GetSetupsQuery,
+  type GetTradingPairsQuery,
   type MonthlyJournalQuery,
 } from '@/generated/graphql'
 //@ts-expect-error ignore
@@ -55,17 +62,22 @@ function normalizeSetup(apiSetup: SetupLike): TradingSetup | null {
 }
 
 //@ts-expect-error ignore
-type TradeDayLike = MonthlyJournalQuery['monthlyJournal']["days"][number]
+type TradeDayLike = MonthlyJournalQuery['monthlyJournal']['days'][number]
 
-function normalizeTradeDay(step: TradeDayLike | null | undefined): TradeDayData | null {
-  if (!step.date || typeof step.net !== 'number' || typeof step.trades !== 'number' || !step.pair) {
+//@ts-expect-error ignore
+type TradingPairLike = GetTradingPairsQuery['tradingPairs'][number]
+
+function normalizeTradeEntry(step: TradeDayLike | null | undefined): TradeEntry | null {
+  if (!step?.date || typeof step.net !== 'number' || typeof step.trades !== 'number' || !step.pair) {
     return null
   }
 
   const direction = step.direction === 'short' ? 'short' : 'long'
-  const closedBy: TradeDayData['closedBy'] = step.closedBy === 'manual' ? 'manual' : step.closedBy === 'sl' ? 'sl' : 'tp'
+  const closedBy: TradeEntry['closedBy'] = step.closedBy === 'manual' ? 'manual' : step.closedBy === 'sl' ? 'sl' : 'tp'
 
   return {
+    id: step.id ?? undefined,
+    date: step.date,
     net: step.net,
     trades: step.trades,
     pair: step.pair,
@@ -80,16 +92,84 @@ function normalizeTradeDay(step: TradeDayLike | null | undefined): TradeDayData 
     setupId: step.setupId ?? undefined,
   }
 }
+
+function normalizeTradingPair(pair: TradingPairLike | null | undefined): TradingPair | null {
+  if (!pair?.id || !pair?.symbol) {
+    return null
+  }
+
+  return {
+    id: pair.id,
+    symbol: pair.symbol,
+  }
+}
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
 import { Chatbot } from '@/components/Chatbot'
 
-type TradingJournalData = Record<string, Record<string, TradeDayData>>
+type TradingJournalData = Record<string, Record<string, AggregatedTradeDay>>
 
-const defaultTradingPairs: TradingPair[] = [
-  {id: 'xauusd', symbol: 'XAUUSD' },
-]
+function areAggregatedDaysEqual(a: AggregatedTradeDay, b: AggregatedTradeDay): boolean {
+  if (a.totalNet !== b.totalNet || a.totalTrades !== b.totalTrades) {
+    return false
+  }
+
+  if (a.entries.length !== b.entries.length) {
+    return false
+  }
+
+  for (let i = 0; i < a.entries.length; i += 1) {
+    const prevEntry = a.entries[i]
+    const nextEntry = b.entries[i]
+
+    if (
+      prevEntry.id !== nextEntry.id ||
+      prevEntry.date !== nextEntry.date ||
+      prevEntry.pair !== nextEntry.pair ||
+      prevEntry.direction !== nextEntry.direction ||
+      prevEntry.trades !== nextEntry.trades ||
+      prevEntry.net !== nextEntry.net ||
+      prevEntry.rr !== nextEntry.rr ||
+      prevEntry.riskPercent !== nextEntry.riskPercent ||
+      prevEntry.session !== nextEntry.session ||
+      prevEntry.closedBy !== nextEntry.closedBy ||
+      prevEntry.emotion !== nextEntry.emotion ||
+      prevEntry.withPlan !== nextEntry.withPlan ||
+      prevEntry.setupId !== nextEntry.setupId
+    ) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function areAggregatedMonthsEqual(
+  prevMonth: Record<string, AggregatedTradeDay> | undefined,
+  nextMonth: Record<string, AggregatedTradeDay>,
+): boolean {
+  if (!prevMonth) {
+    return false
+  }
+
+  const prevKeys = Object.keys(prevMonth)
+  const nextKeys = Object.keys(nextMonth)
+
+  if (prevKeys.length !== nextKeys.length) {
+    return false
+  }
+
+  for (const key of nextKeys) {
+    const prevDay = prevMonth[key]
+    const nextDay = nextMonth[key]
+    if (!prevDay || !nextDay || !areAggregatedDaysEqual(prevDay, nextDay)) {
+      return false
+    }
+  }
+
+  return true
+}
 
 const preciseCurrencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -127,10 +207,35 @@ function formatIsoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function formatTradeMetaLabel(trade: TradeDayData, setupNameById: Record<string, string>) {
-  const directionLabel = trade.direction === 'long' ? 'Long' : 'Short'
-  const setupLabel = trade.setupId ? setupNameById[trade.setupId] : undefined
-  return setupLabel ? `${trade.pair} • ${directionLabel} • ${setupLabel}` : `${trade.pair} • ${directionLabel}`
+function formatTradeMetaLabel(day: AggregatedTradeDay, setupNameById: Record<string, string>) {
+  const uniquePairs = Array.from(
+    new Set(day.entries.map((entry) => entry.pair).filter((pair): pair is string => Boolean(pair))),
+  )
+  const pairLabel =
+    uniquePairs.length === 0
+      ? undefined
+      : uniquePairs.length <= 2
+        ? uniquePairs.join(', ')
+        : `${uniquePairs.slice(0, 2).join(', ')} +${uniquePairs.length - 2}`
+
+  const uniqueSetups = Array.from(
+    new Set(
+      day.entries
+        .map((entry) => entry.setupId)
+        .filter((value): value is string => Boolean(value))
+        .map((setupId) => setupNameById[setupId] ?? setupId),
+    ),
+  )
+  const setupLabel =
+    uniqueSetups.length === 0
+      ? undefined
+      : uniqueSetups.length <= 2
+        ? uniqueSetups.join(', ')
+        : `${uniqueSetups.slice(0, 2).join(', ')} +${uniqueSetups.length - 2}`
+
+  const tradesLabel = `${day.totalTrades} ${day.totalTrades === 1 ? 'trade' : 'trades'}`
+
+  return [pairLabel, tradesLabel, setupLabel].filter(Boolean).join(' • ')
 }
 
 function formatCompactCurrency(value: number) {
@@ -181,10 +286,11 @@ function buildCalendarWeeks(
       let tradesLabel: string | undefined
 
       if (tradeData) {
-        highlight = tradeData.net > 0 ? 'positive' : tradeData.net < 0 ? 'negative' : undefined
-        valueLabel = formatCompactCurrency(tradeData.net)
+        highlight =
+          tradeData.totalNet > 0 ? 'positive' : tradeData.totalNet < 0 ? 'negative' : undefined
+        valueLabel = formatCompactCurrency(tradeData.totalNet)
         tradesLabel = formatTradeMetaLabel(tradeData, setupNameById)
-        weekNet += tradeData.net
+        weekNet += tradeData.totalNet
         weekActiveDays += 1
       }
 
@@ -215,9 +321,9 @@ function buildCalendarWeeks(
   }
 
   const monthTotals = Object.values(monthData).reduce<CalendarMonthlySummary>(
-    (acc, { net, trades }) => {
-      acc.net += net
-      acc.tradeCount += trades
+    (acc, { totalNet, totalTrades }) => {
+      acc.net += totalNet
+      acc.tradeCount += totalTrades
       acc.activeDays += 1
       return acc
     },
@@ -267,9 +373,10 @@ export function MainPage({ session }: MainPageProps) {
   const [activeMonth, setActiveMonth] = useState(() => new Date(2025, 3, 1))
   const [activeDate, setActiveDate] = useState(() => new Date(2025, 3, 1))
   const [journalData, setJournalData] = useState<TradingJournalData>({})
+  const [activeTab, setActiveTab] = useState<'calendar' | 'playbook' | 'watchlist' | 'tradeLog'>('calendar')
   const [isAddTradeOpen, setIsAddTradeOpen] = useState(false)
   const [isAddSetupOpen, setIsAddSetupOpen] = useState(false)
-  const [tradingPairs, setTradingPairs] = useState<TradingPair[]>(defaultTradingPairs)
+  const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([])
   const [setups, setSetups] = useState<TradingSetup[]>([])
   const [isMobileView, setIsMobileView] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -279,6 +386,7 @@ export function MainPage({ session }: MainPageProps) {
   const monthKey = useMemo(() => getMonthKey(activeMonth), [activeMonth])
 
   const [{ data: setupsQueryData }] = useQuery({ query: GetSetupsDocument })
+  const [{ data: tradingPairsQueryData }] = useQuery({ query: GetTradingPairsDocument })
   const [{ data: journalQueryData }] = useQuery({
     query: MonthlyJournalDocument,
     variables: { month: monthKey },
@@ -286,6 +394,9 @@ export function MainPage({ session }: MainPageProps) {
 
   const [, executeAddSetup] = useMutation(AddSetupDocument)
   const [, executeAddTrade] = useMutation(AddTradeDocument)
+  const [, executeAddTradingPair] = useMutation(AddTradingPairDocument)
+  const [, executeUpdateTradingPair] = useMutation(UpdateTradingPairDocument)
+  const [, executeDeleteTradingPair] = useMutation(DeleteTradingPairDocument)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -323,28 +434,60 @@ export function MainPage({ session }: MainPageProps) {
   }, [setupsQueryData])
 
   useEffect(() => {
+    if (tradingPairsQueryData?.tradingPairs) {
+      const mapped = tradingPairsQueryData.tradingPairs
+        .map(normalizeTradingPair)
+        .filter((pair): pair is TradingPair => Boolean(pair))
+      setTradingPairs(mapped)
+    }
+  }, [tradingPairsQueryData])
+
+  useEffect(() => {
     if (!journalQueryData?.monthlyJournal) {
-      if (Object.keys(journalData).length !== 0) {
-        setJournalData({})
-      }
+      setJournalData((prev) => (Object.keys(prev).length === 0 ? prev : {}))
       return
     }
 
     const { month, days } = journalQueryData.monthlyJournal
     if (!month) return
 
-    const nextMonthData = (Array.isArray(days) ? days : []).reduce<Record<string, TradeDayData>>((acc, day) => {
-      const normalized = normalizeTradeDay(day)
-      if (!normalized || !day?.date) return acc
-      acc[day.date] = normalized
-      return acc
-    }, {})
+    const nextMonthData = (Array.isArray(days) ? days : []).reduce<Record<string, AggregatedTradeDay>>(
+      (acc, day) => {
+        const normalized = normalizeTradeEntry(day)
+        if (!normalized) return acc
 
-    setJournalData((prev) => ({
-      ...prev,
-      [month]: nextMonthData,
-    }))
-  }, [journalQueryData, journalData])
+        const existing = acc[normalized.date]
+        if (existing) {
+          acc[normalized.date] = {
+            totalNet: existing.totalNet + normalized.net,
+            totalTrades: existing.totalTrades + normalized.trades,
+            entries: [...existing.entries, normalized],
+          }
+        } else {
+          acc[normalized.date] = {
+            totalNet: normalized.net,
+            totalTrades: normalized.trades,
+            entries: [normalized],
+          }
+        }
+
+        return acc
+      },
+      {},
+    )
+
+    setJournalData((prev) => {
+      const existingMonth = prev[month]
+      if (areAggregatedMonthsEqual(existingMonth, nextMonthData)) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [month]: nextMonthData,
+      }
+    })
+  }, [journalQueryData])
 
   const setupNameMap = useMemo(
     () =>
@@ -406,6 +549,38 @@ export function MainPage({ session }: MainPageProps) {
 
   const monthData = useMemo(() => journalData[monthKey] ?? {}, [journalData, monthKey])
 
+  const tradeLogEntries = useMemo<TradeLogEntry[]>(() => {
+    const monthEntries = journalData[monthKey] ?? {}
+    const rows: TradeLogEntry[] = []
+
+    Object.entries(monthEntries).forEach(([date, day]) => {
+      day.entries.forEach((entry, index) => {
+        rows.push({
+          id: entry.id ?? `${date}-${index}`,
+          date,
+          pair: entry.pair,
+          direction: entry.direction,
+          trades: entry.trades,
+          net: entry.net,
+          rr: entry.rr ?? null,
+          riskPercent: entry.riskPercent ?? null,
+          session: entry.session ?? undefined,
+          closedBy: entry.closedBy,
+          emotion: entry.emotion ?? undefined,
+          withPlan: entry.withPlan,
+          setupName: entry.setupId ? setupNameMap[entry.setupId] ?? entry.setupId : undefined,
+        })
+      })
+    })
+
+    return rows.sort((a, b) => {
+      if (a.date === b.date) {
+        return b.id.localeCompare(a.id)
+      }
+      return b.date.localeCompare(a.date)
+    })
+  }, [journalData, monthKey, setupNameMap])
+
   const chatContextSummary = useMemo(() => {
     const entries = Object.entries(monthData)
     if (!entries.length) {
@@ -419,15 +594,15 @@ export function MainPage({ session }: MainPageProps) {
     let worstDay: { date: string; net: number } | null = null
 
     entries.forEach(([date, trade]) => {
-      if (trade.net > 0) winningDays += 1
-      else if (trade.net < 0) losingDays += 1
+      if (trade.totalNet > 0) winningDays += 1
+      else if (trade.totalNet < 0) losingDays += 1
       else flatDays += 1
 
-      if (!bestDay || trade.net > bestDay.net) {
-        bestDay = { date, net: trade.net }
+      if (!bestDay || trade.totalNet > bestDay.net) {
+        bestDay = { date, net: trade.totalNet }
       }
-      if (!worstDay || trade.net < worstDay.net) {
-        worstDay = { date, net: trade.net }
+      if (!worstDay || trade.totalNet < worstDay.net) {
+        worstDay = { date, net: trade.totalNet }
       }
     })
 
@@ -458,12 +633,12 @@ export function MainPage({ session }: MainPageProps) {
     let negativeTradeCount = 0
 
     Object.values(monthData).forEach((day) => {
-      if (day.net > 0) {
-        grossProfit += day.net
-        positiveTradeCount += day.trades
-      } else if (day.net < 0) {
-        grossLoss += Math.abs(day.net)
-        negativeTradeCount += day.trades
+      if (day.totalNet > 0) {
+        grossProfit += day.totalNet
+        positiveTradeCount += day.totalTrades
+      } else if (day.totalNet < 0) {
+        grossLoss += Math.abs(day.totalNet)
+        negativeTradeCount += day.totalTrades
       }
     })
 
@@ -502,13 +677,13 @@ export function MainPage({ session }: MainPageProps) {
 
   const activeDayIso = useMemo(() => formatIsoDate(activeDate), [activeDate])
   const activeMonthKey = useMemo(() => getMonthKey(activeDate), [activeDate])
-  const activeTrade = journalData[activeMonthKey]?.[activeDayIso]
+  const activeDaySummary = journalData[activeMonthKey]?.[activeDayIso]
 
   const mobileDay: CalendarDay = useMemo(() => {
-    const highlight = activeTrade
-      ? activeTrade.net > 0
+    const highlight = activeDaySummary
+      ? activeDaySummary.totalNet > 0
         ? 'positive'
-        : activeTrade.net < 0
+        : activeDaySummary.totalNet < 0
           ? 'negative'
           : undefined
       : undefined
@@ -518,10 +693,12 @@ export function MainPage({ session }: MainPageProps) {
       dayNumber: activeDate.getDate(),
       isCurrentMonth: true,
       highlight,
-      valueLabel: activeTrade ? formatCompactCurrency(activeTrade.net) : '$0',
-      tradesLabel: activeTrade ? formatTradeMetaLabel(activeTrade, setupNameMap) : 'No trades',
+      valueLabel: activeDaySummary ? formatCompactCurrency(activeDaySummary.totalNet) : '$0',
+      tradesLabel: activeDaySummary
+        ? formatTradeMetaLabel(activeDaySummary, setupNameMap)
+        : 'No trades',
     }
-  }, [activeDate, activeDayIso, activeTrade, setupNameMap])
+  }, [activeDate, activeDayIso, activeDaySummary, setupNameMap])
 
   const activeWeek = useMemo(
     () => weeks.find((week) => week.days.some((day) => day.id === activeDayIso)),
@@ -569,14 +746,66 @@ export function MainPage({ session }: MainPageProps) {
     return formatIsoDate(sameMonth ? today : activeMonth)
   }, [activeDate, activeMonth, isMobileView])
 
-  const handleAddPair = (symbol: string) => {
-    const id = `${symbol}-${Date.now()}`
-    setTradingPairs((prev) => [...prev, { id, symbol }])
-  }
+  const handleAddPair = useCallback(
+    async (symbol: string) => {
+      const formatted = symbol.trim().toUpperCase()
+      const { data, error } = await executeAddTradingPair({ symbol: formatted })
 
-  const handleRemovePair = (id: string) => {
-    setTradingPairs((prev) => prev.filter((pair) => pair.id !== id))
-  }
+      if (error) {
+        console.error('Failed to add trading pair', error)
+        throw new Error('Could not add pair. Try again.')
+      }
+
+      const normalized = normalizeTradingPair(data?.addTradingPair)
+      if (!normalized) {
+        throw new Error('Could not add pair. Try again.')
+      }
+
+      setTradingPairs((prev) => {
+        if (prev.some((pair) => pair.id === normalized.id)) {
+          return prev
+        }
+        return [...prev, normalized]
+      })
+    },
+    [executeAddTradingPair],
+  )
+
+  const handleUpdatePair = useCallback(
+    async (id: string, symbol: string) => {
+      const formatted = symbol.trim().toUpperCase()
+      const { data, error } = await executeUpdateTradingPair({ id, symbol: formatted })
+
+      if (error) {
+        console.error('Failed to update trading pair', error)
+        throw new Error('Could not update pair. Try again.')
+      }
+
+      const normalized = normalizeTradingPair(data?.updateTradingPair)
+      if (!normalized) {
+        throw new Error('Could not update pair. Try again.')
+      }
+
+      setTradingPairs((prev) =>
+        prev.map((pair) => (pair.id === normalized.id ? { ...pair, symbol: normalized.symbol } : pair)),
+      )
+    },
+    [executeUpdateTradingPair],
+  )
+
+  const handleRemovePair = useCallback(
+    async (id: string) => {
+      const { error } = await executeDeleteTradingPair({ id })
+
+      if (error) {
+        console.error('Failed to delete trading pair', error)
+        throw new Error('Could not remove pair. Try again.')
+      }
+
+      setTradingPairs((prev) => prev.filter((pair) => pair.id !== id))
+    },
+    [executeDeleteTradingPair],
+  )
 
   const handleCreateSetup = async (input: AddSetupInput) => {
     const { data, error } = await executeAddSetup({ input })
@@ -643,8 +872,8 @@ export function MainPage({ session }: MainPageProps) {
     }
 
     const normalizedFromServer = data?.addTrade
-      ? normalizeTradeDay(data.addTrade)
-      : normalizeTradeDay({
+      ? normalizeTradeEntry(data.addTrade)
+      : normalizeTradeEntry({
           date,
           net,
           trades,
@@ -664,12 +893,28 @@ export function MainPage({ session }: MainPageProps) {
       return
     }
 
-    const month = date.slice(0, 7)
+    const entryDate = normalizedFromServer.date
+    const month = entryDate.slice(0, 7)
 
     setJournalData((prev) => {
+      const existingMonth = prev[month] ?? {}
+      const existingDay = existingMonth[entryDate]
+
+      const nextDay: AggregatedTradeDay = existingDay
+        ? {
+            totalNet: existingDay.totalNet + normalizedFromServer.net,
+            totalTrades: existingDay.totalTrades + normalizedFromServer.trades,
+            entries: [...existingDay.entries, normalizedFromServer],
+          }
+        : {
+            totalNet: normalizedFromServer.net,
+            totalTrades: normalizedFromServer.trades,
+            entries: [normalizedFromServer],
+          }
+
       const nextMonthData = {
-        ...(prev[month] ?? {}),
-        [date]: normalizedFromServer,
+        ...existingMonth,
+        [entryDate]: nextDay,
       }
 
       return {
@@ -679,7 +924,7 @@ export function MainPage({ session }: MainPageProps) {
     })
 
     setActiveMonth((prev) => {
-      const parsedDate = new Date(date)
+      const parsedDate = new Date(entryDate)
       const sameMonth =
         parsedDate.getFullYear() === prev.getFullYear() && parsedDate.getMonth() === prev.getMonth()
       if (sameMonth) return prev
@@ -691,6 +936,10 @@ export function MainPage({ session }: MainPageProps) {
     profit: { label: 'Profit', color: '#34d399' },
     loss: { label: 'Loss', color: '#f87171' },
   }
+
+  const handleSelectTab = useCallback((tab: typeof activeTab) => {
+    setActiveTab(tab)
+  }, [])
 
   return (
     <main className="min-h-screen bg-background px-4 py-10 text-foreground">
@@ -803,24 +1052,61 @@ export function MainPage({ session }: MainPageProps) {
           </div>
         </section>
 
-        <CalendarSection
-          activeTrade={activeTrade}
-          activeWeek={activeWeek}
-          isMobileView={isMobileView}
-          mobileDay={mobileDay}
-          monthNetLabel={monthNetLabel}
-          monthlySummary={monthlySummary}
-          onAddTrade={handleOpenAddTrade}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          periodLabel={periodLabel}
-          setupNameMap={setupNameMap}
-          weeks={weeks}
-        />
+        <nav className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'calendar' as const, label: 'Calendar' },
+            { id: 'playbook' as const, label: 'Playbook' },
+            { id: 'tradeLog' as const, label: 'Trade Log' },
+            { id: 'watchlist' as const, label: 'Watchlist' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                className={cn(
+                  'flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                  isActive
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted/60',
+                )}
+                type="button"
+                onClick={() => handleSelectTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
 
-        <SetupsPanel setups={setups} onAddSetup={() => setIsAddSetupOpen(true)} />
+        {activeTab === 'calendar' ? (
+          <CalendarSection
+            activeDay={activeDaySummary}
+            activeWeek={activeWeek}
+            isMobileView={isMobileView}
+            mobileDay={mobileDay}
+            monthNetLabel={monthNetLabel}
+            monthlySummary={monthlySummary}
+            onAddTrade={handleOpenAddTrade}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+            periodLabel={periodLabel}
+            setupNameMap={setupNameMap}
+            weeks={weeks}
+          />
+        ) : null}
 
-        <PairsPanel onAddPair={handleAddPair} onRemovePair={handleRemovePair} pairs={tradingPairs} />
+        {activeTab === 'tradeLog' ? <TradeLogTable entries={tradeLogEntries} monthLabel={monthLabel} /> : null}
+
+        {activeTab === 'playbook' ? <SetupsPanel setups={setups} onAddSetup={() => setIsAddSetupOpen(true)} /> : null}
+
+        {activeTab === 'watchlist' ? (
+          <PairsPanel
+            onAddPair={handleAddPair}
+            onRemovePair={handleRemovePair}
+            onUpdatePair={handleUpdatePair}
+            pairs={tradingPairs}
+          />
+        ) : null}
 
         <AddTradeDialog
           defaultDate={defaultAddTradeDate}

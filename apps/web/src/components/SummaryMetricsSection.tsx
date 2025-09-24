@@ -8,7 +8,7 @@ import {
   Tooltip as RechartsTooltip,
 } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
-import type { CalendarMonthlySummary, TradeDayData } from '@/components/CalendarSection'
+import type { AggregatedTradeDay, CalendarMonthlySummary } from '@/components/CalendarSection'
 import { Button } from '@/components/ui/button'
 
 const preciseCurrencyFormatter = new Intl.NumberFormat('en-US', {
@@ -62,7 +62,7 @@ function SummaryMetricCard({ label, value, helper, trendLabel, trendTone = 'neut
 }
 
 type SummaryMetricsSectionProps = {
-  monthData: Record<string, TradeDayData>
+  monthData: Record<string, AggregatedTradeDay>
   monthlySummary: CalendarMonthlySummary
 }
 
@@ -79,12 +79,12 @@ export function SummaryMetricsSection({ monthData, monthlySummary }: SummaryMetr
     let negativeTradeCount = 0
 
     Object.values(monthData).forEach((day) => {
-      if (day.net > 0) {
-        grossProfit += day.net
-        positiveTradeCount += day.trades
-      } else if (day.net < 0) {
-        grossLoss += Math.abs(day.net)
-        negativeTradeCount += day.trades
+      if (day.totalNet > 0) {
+        grossProfit += day.totalNet
+        positiveTradeCount += day.totalTrades
+      } else if (day.totalNet < 0) {
+        grossLoss += Math.abs(day.totalNet)
+        negativeTradeCount += day.totalTrades
       }
     })
 

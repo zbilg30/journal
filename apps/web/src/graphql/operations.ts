@@ -15,6 +15,17 @@ export const GetSetupsDocument = gql`
         sample
       }
     }
+}
+`
+
+export const GetTradingPairsDocument = gql`
+  query GetTradingPairs {
+    tradingPairs {
+      id
+      symbol
+      createdAt
+      updatedAt
+    }
   }
 `
 
@@ -61,6 +72,34 @@ export const AddSetupDocument = gql`
       focusTag
       lastExecuted
     }
+}
+`
+
+export const AddTradingPairDocument = gql`
+  mutation AddTradingPair($symbol: String!) {
+    addTradingPair(symbol: $symbol) {
+      id
+      symbol
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+export const UpdateTradingPairDocument = gql`
+  mutation UpdateTradingPair($id: ID!, $symbol: String!) {
+    updateTradingPair(id: $id, symbol: $symbol) {
+      id
+      symbol
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+export const DeleteTradingPairDocument = gql`
+  mutation DeleteTradingPair($id: ID!) {
+    deleteTradingPair(id: $id)
   }
 `
 

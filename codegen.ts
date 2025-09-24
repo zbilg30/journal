@@ -6,6 +6,10 @@ const config: CodegenConfig = {
   generates: {
     './apps/web/src/generated/graphql.ts': {
       plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
+      config: {
+        documentNodeImport: './typed-document-node#TypedDocumentNode',
+        useTypeImports: true,
+      },
     },
   },
 }

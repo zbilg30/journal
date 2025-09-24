@@ -7,7 +7,9 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-export type TradeDayData = {
+export type TradeEntry = {
+  id?: string
+  date: string
   net: number
   trades: number
   pair: string
@@ -20,6 +22,12 @@ export type TradeDayData = {
   withPlan: boolean
   description?: string
   setupId?: string
+}
+
+export type AggregatedTradeDay = {
+  totalNet: number
+  totalTrades: number
+  entries: TradeEntry[]
 }
 
 export type CalendarDay = {
@@ -56,7 +64,7 @@ type CalendarSectionProps = {
   monthlySummary: CalendarMonthlySummary
   mobileDay: CalendarDay
   activeWeek?: CalendarWeek
-  activeTrade?: TradeDayData
+  activeDay?: AggregatedTradeDay
   setupNameMap: Record<string, string>
   weeks: CalendarWeek[]
 }
@@ -113,7 +121,15 @@ function DayCell({ day }: { day: CalendarDay }) {
                 )}
               />
             )}
-            <span className='text-emerald-600 dark:text-emerald-500'>{day.valueLabel}</span>
+            <span
+              className={cn(
+                'text-foreground',
+                day.highlight === 'positive' && 'text-emerald-600 dark:text-emerald-500',
+                day.highlight === 'negative' && 'text-red-600 dark:text-rose-400',
+              )}
+            >
+              {day.valueLabel}
+            </span>
           </span>
           <span className={tradesLabelClasses}>{day.tradesLabel}</span>
         </div>
@@ -160,7 +176,7 @@ export function CalendarSection({
   monthlySummary,
   mobileDay,
   activeWeek,
-  activeTrade,
+  activeDay,
   setupNameMap,
   weeks,
 }: CalendarSectionProps) {
@@ -213,58 +229,100 @@ export function CalendarSection({
             </div>
 
             <div className="rounded-3xl border border-border/60 bg-card/80 p-4 text-sm shadow-sm shadow-black/30">
-              {activeTrade ? (
+              {activeDay ? (
                 <div className="space-y-4">
-                  <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                  <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                     <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pair</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.pair}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Direction</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.direction === 'long' ? 'Long' : 'Short'}</dd>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Net P&amp;L</dt>
+                      <dd className="text-sm font-semibold text-foreground">{currencyFormatter.format(activeDay.totalNet)}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trades</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.trades}</dd>
+                      <dd className="text-sm font-semibold text-foreground">{activeDay.totalTrades}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Closed By</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.closedBy.toUpperCase()}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">RR</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.rr != null ? `${activeTrade.rr}R` : '—'}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk %</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.riskPercent != null ? `${activeTrade.riskPercent}%` : '—'}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Session</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.session ?? '—'}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Emotion</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.emotion ?? '—'}</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Setup</dt>
-                      <dd className="text-sm font-semibold text-foreground">
-                        {activeTrade.setupId ? setupNameMap[activeTrade.setupId] ?? activeTrade.setupId : '—'}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">With Plan</dt>
-                      <dd className="text-sm font-semibold text-foreground">{activeTrade.withPlan ? 'Yes' : 'No'}</dd>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Entries</dt>
+                      <dd className="text-sm font-semibold text-foreground">{activeDay.entries.length}</dd>
                     </div>
                   </dl>
 
-                  {activeTrade.description ? (
-                    <div className="rounded-2xl border border-border/50 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
-                      {activeTrade.description}
-                    </div>
-                  ) : null}
+                  <div className="space-y-3">
+                    {activeDay.entries.map((entry, index) => {
+                      const entryKey = entry.id ?? `${entry.date}-${index}`
+                      return (
+                        <article
+                          key={entryKey}
+                          className="space-y-3 rounded-2xl border border-border/50 bg-muted/25 px-4 py-3 text-sm shadow-sm"
+                        >
+                          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Net</dt>
+                              <dd
+                                className={cn(
+                                  'text-sm font-semibold',
+                                  entry.net > 0
+                                    ? 'text-emerald-400'
+                                    : entry.net < 0
+                                      ? 'text-rose-300'
+                                      : 'text-foreground',
+                                )}
+                              >
+                                {currencyFormatter.format(entry.net)}
+                              </dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pair</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.pair}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Direction</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.direction === 'long' ? 'Long' : 'Short'}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trades</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.trades}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Closed By</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.closedBy.toUpperCase()}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">RR</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.rr != null ? `${entry.rr}R` : '—'}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Risk %</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.riskPercent != null ? `${entry.riskPercent}%` : '—'}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Session</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.session ?? '—'}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Emotion</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.emotion ?? '—'}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Setup</dt>
+                              <dd className="text-sm font-semibold text-foreground">
+                                {entry.setupId ? setupNameMap[entry.setupId] ?? entry.setupId : '—'}
+                              </dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">With Plan</dt>
+                              <dd className="text-sm font-semibold text-foreground">{entry.withPlan ? 'Yes' : 'No'}</dd>
+                            </div>
+                          </dl>
+
+                          {entry.description ? (
+                            <div className="rounded-2xl border border-border/50 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+                              {entry.description}
+                            </div>
+                          ) : null}
+                        </article>
+                      )
+                    })}
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No trades logged for this day.</p>

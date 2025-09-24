@@ -1,4 +1,4 @@
-import type{ TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import type { TypedDocumentNode as DocumentNode } from './typed-document-node';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -61,6 +61,9 @@ export type Mutation = {
   __typename?: 'Mutation';
   addSetup?: Maybe<Setup>;
   addTrade?: Maybe<TradeDay>;
+  addTradingPair?: Maybe<TradingPair>;
+  deleteTradingPair?: Maybe<Scalars['Boolean']['output']>;
+  updateTradingPair?: Maybe<TradingPair>;
 };
 
 
@@ -73,10 +76,27 @@ export type MutationAddTradeArgs = {
   input: AddTradeInput;
 };
 
+
+export type MutationAddTradingPairArgs = {
+  symbol: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteTradingPairArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateTradingPairArgs = {
+  id: Scalars['ID']['input'];
+  symbol: Scalars['String']['input'];
+};
+
 export type Query = {
   __typename?: 'Query';
   monthlyJournal?: Maybe<MonthlyJournal>;
   setups?: Maybe<Array<Setup>>;
+  tradingPairs?: Maybe<Array<TradingPair>>;
 };
 
 
@@ -138,10 +158,23 @@ export type TradeDay = {
   withPlan?: Maybe<Scalars['Boolean']['output']>;
 };
 
+export type TradingPair = {
+  __typename?: 'TradingPair';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
+  symbol?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
+};
+
 export type GetSetupsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetSetupsQuery = { __typename?: 'Query', setups?: Array<{ __typename?: 'Setup', id?: string | null, name?: string | null, bias?: string | null, description?: string | null, focusTag?: string | null, lastExecuted?: string | null, stats?: { __typename?: 'SetupStats', winRate?: number | null, avgR?: number | null, sample?: number | null } | null }> | null };
+
+export type GetTradingPairsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetTradingPairsQuery = { __typename?: 'Query', tradingPairs?: Array<{ __typename?: 'TradingPair', id?: string | null, symbol?: string | null, createdAt?: string | null, updatedAt?: string | null }> | null };
 
 export type MonthlyJournalQueryVariables = Exact<{
   month: Scalars['String']['input'];
@@ -157,6 +190,28 @@ export type AddSetupMutationVariables = Exact<{
 
 export type AddSetupMutation = { __typename?: 'Mutation', addSetup?: { __typename?: 'Setup', id?: string | null, name?: string | null, bias?: string | null, description?: string | null, focusTag?: string | null, lastExecuted?: string | null } | null };
 
+export type AddTradingPairMutationVariables = Exact<{
+  symbol: Scalars['String']['input'];
+}>;
+
+
+export type AddTradingPairMutation = { __typename?: 'Mutation', addTradingPair?: { __typename?: 'TradingPair', id?: string | null, symbol?: string | null, createdAt?: string | null, updatedAt?: string | null } | null };
+
+export type UpdateTradingPairMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  symbol: Scalars['String']['input'];
+}>;
+
+
+export type UpdateTradingPairMutation = { __typename?: 'Mutation', updateTradingPair?: { __typename?: 'TradingPair', id?: string | null, symbol?: string | null, createdAt?: string | null, updatedAt?: string | null } | null };
+
+export type DeleteTradingPairMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteTradingPairMutation = { __typename?: 'Mutation', deleteTradingPair?: boolean | null };
+
 export type AddTradeMutationVariables = Exact<{
   input: AddTradeInput;
 }>;
@@ -166,6 +221,10 @@ export type AddTradeMutation = { __typename?: 'Mutation', addTrade?: { __typenam
 
 
 export const GetSetupsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSetups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"bias"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"focusTag"}},{"kind":"Field","name":{"kind":"Name","value":"lastExecuted"}},{"kind":"Field","name":{"kind":"Name","value":"stats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"winRate"}},{"kind":"Field","name":{"kind":"Name","value":"avgR"}},{"kind":"Field","name":{"kind":"Name","value":"sample"}}]}}]}}]}}]} as unknown as DocumentNode<GetSetupsQuery, GetSetupsQueryVariables>;
+export const GetTradingPairsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetTradingPairs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tradingPairs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"symbol"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetTradingPairsQuery, GetTradingPairsQueryVariables>;
 export const MonthlyJournalDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MonthlyJournal"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"month"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"monthlyJournal"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"month"},"value":{"kind":"Variable","name":{"kind":"Name","value":"month"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"summary"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"net"}},{"kind":"Field","name":{"kind":"Name","value":"tradeCount"}},{"kind":"Field","name":{"kind":"Name","value":"activeDays"}},{"kind":"Field","name":{"kind":"Name","value":"grossProfit"}},{"kind":"Field","name":{"kind":"Name","value":"grossLoss"}}]}},{"kind":"Field","name":{"kind":"Name","value":"days"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"net"}},{"kind":"Field","name":{"kind":"Name","value":"trades"}},{"kind":"Field","name":{"kind":"Name","value":"pair"}},{"kind":"Field","name":{"kind":"Name","value":"rr"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}},{"kind":"Field","name":{"kind":"Name","value":"session"}},{"kind":"Field","name":{"kind":"Name","value":"closedBy"}},{"kind":"Field","name":{"kind":"Name","value":"riskPercent"}},{"kind":"Field","name":{"kind":"Name","value":"emotion"}},{"kind":"Field","name":{"kind":"Name","value":"withPlan"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"setupId"}}]}}]}}]}}]} as unknown as DocumentNode<MonthlyJournalQuery, MonthlyJournalQueryVariables>;
 export const AddSetupDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddSetup"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AddSetupInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addSetup"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"bias"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"focusTag"}},{"kind":"Field","name":{"kind":"Name","value":"lastExecuted"}}]}}]}}]} as unknown as DocumentNode<AddSetupMutation, AddSetupMutationVariables>;
+export const AddTradingPairDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddTradingPair"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"symbol"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addTradingPair"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"symbol"},"value":{"kind":"Variable","name":{"kind":"Name","value":"symbol"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"symbol"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<AddTradingPairMutation, AddTradingPairMutationVariables>;
+export const UpdateTradingPairDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateTradingPair"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"symbol"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTradingPair"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"symbol"},"value":{"kind":"Variable","name":{"kind":"Name","value":"symbol"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"symbol"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateTradingPairMutation, UpdateTradingPairMutationVariables>;
+export const DeleteTradingPairDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteTradingPair"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteTradingPair"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteTradingPairMutation, DeleteTradingPairMutationVariables>;
 export const AddTradeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddTrade"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AddTradeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addTrade"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"net"}},{"kind":"Field","name":{"kind":"Name","value":"trades"}},{"kind":"Field","name":{"kind":"Name","value":"pair"}},{"kind":"Field","name":{"kind":"Name","value":"rr"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}},{"kind":"Field","name":{"kind":"Name","value":"session"}},{"kind":"Field","name":{"kind":"Name","value":"closedBy"}},{"kind":"Field","name":{"kind":"Name","value":"riskPercent"}},{"kind":"Field","name":{"kind":"Name","value":"emotion"}},{"kind":"Field","name":{"kind":"Name","value":"withPlan"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"setupId"}}]}}]}}]} as unknown as DocumentNode<AddTradeMutation, AddTradeMutationVariables>;
